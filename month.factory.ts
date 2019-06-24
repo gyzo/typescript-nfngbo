@@ -7,7 +7,7 @@ export const daysOfWeek = ['pn', 'wt', 'śr', 'cz', 'pt', 'so', 'nd'];
 export function createMonth(day: number, month: number, year: number) {
   const newMonth = moment(`${year}-${month}-${day}`);
   const monthOfNewMonth = newMonth.format('MM');
-  
+  const today = moment.now();
   const startOfMonthString = newMonth.startOf('month').format('dd');
   const startOfMonth = moment(`${year}-${month}-${day}`).startOf('month');
   const endOfMonth = newMonth.endOf('month');
@@ -34,23 +34,20 @@ export function createMonth(day: number, month: number, year: number) {
         console.log('loopStarted ' + startOfMonthString.toLowerCase() + ' ' + value + ' ' + loopFinished);
       }
 
-      if (loopStarted  && !loopFinished) {
-        console.log(value + ' ' + newDay.name + ' = ' + startOfMonth.format('dd'));
+      if (loopStarted && !loopFinished) {
         newDay.fullDate = startOfMonth.format('DD.MM.YYYY');
         newDay.label = startOfMonth.format('dd');
         newDay.dayOfMonth = Number(startOfMonth.format('D'));
         newDay.yearOfMonth = Number(startOfMonth.format('YYYY'));
         newDay.isVisible(true);
-        newDay.disabled = false;
-       startOfMonth.add(1, 'd');
-       if (monthOfNewMonth !== startOfMonth.format('MM')) {
+        newDay.disabled = startOfMonth < today;
+        startOfMonth.add(1, 'd');
+        if (monthOfNewMonth !== startOfMonth.format('MM')) {
           loopFinished = true;
         }
       }
-      
+
       monthView.collection.push(newDay);
-     
-      
     }
   )
 
@@ -77,7 +74,6 @@ export class DayView {
   }
 }
 
-
 interface WeekView {
   collection: DayView[];
 }
@@ -96,9 +92,11 @@ class Months implements MonthsView {
 }
 interface DatePickerInputParameters {
   currentDate?: string;
-  firstMonth?: number;
+  readonly firstMonth?: number;
   dateFrom?: KnockoutObservable<string>;
   dateTo?: KnockoutObservable<string>;
+  readonly toggleFrom?: string;
+  readonly toggleTo?: string;
 }
 interface DatePickerOutputParameters {
   onSelectDay?: Function;
@@ -110,6 +108,8 @@ interface DatePickerParameters {
 }
 
 export class DatePickerComponent {
+  private componentInfo: KnockoutComponentTypes.ComponentInfo;
+  isOpen: KnockoutObservable<boolean> = ko.observable(false);
   onClose: Function;
   monthsView: MonthsView;
   dateFrom: KnockoutObservable<string> = ko.observable('');
@@ -117,14 +117,18 @@ export class DatePickerComponent {
   private selectedDateFrom: KnockoutObservable<string> = ko.observable('');
   private selectedDateTo: KnockoutObservable<string> = ko.observable('');
   private daysOfWeek: string[];
+  private toggleFromElement: NodeListOf<HTMLElement>;
+  private toggleToElement: NodeListOf<HTMLElement>;
+  private toggleFrom?: string;
+  private toggleTo?: string;
 
   onSelectDay?: Function;
   onSubmit?: Function;
 
-  constructor(params: DatePickerParameters) {
+  constructor(params: DatePickerParameters, componentInfo: KnockoutComponentTypes.ComponentInfo) {
     this.daysOfWeek = daysOfWeek;
     this.monthsView = new Months();
-    this.setMonths();
+    this.componentInfo = componentInfo;
 
     if (params.input && params.input.dateFrom) {
       this.selectedDateFrom(params.input.dateFrom());
@@ -135,6 +139,16 @@ export class DatePickerComponent {
       this.dateTo = params.input.dateTo;
     }
 
+    if (params.input && params.input.toggleFrom) {
+      this.toggleFrom = params.input.toggleFrom;
+      this.toggleFromElement = document.querySelectorAll(params.input.toggleFrom);
+    }
+
+    if (params.input && params.input.toggleTo) {
+      this.toggleTo = params.input.toggleTo;
+      this.toggleToElement = document.querySelectorAll(params.input.toggleTo);
+    }
+
     if (params.output && params.output.onSelectDay) {
       this.onSelectDay = params.output.onSelectDay;
     }
@@ -143,13 +157,47 @@ export class DatePickerComponent {
       this.onClose = params.output.onClose;
     }
 
+    this.setMonths();
+    this.initSelectedDays();
+    this.showSelectedMonth();
+    this.bindOpenEvent();
     this.bindSelectDay();
+  }
+
+  private open(): void {
+    if (!this.isOpen()) {
+      this.isOpen(true);
+      this.initSelectedDays();
+      this.showSelectedMonth();
+    }
+  }
+
+  dispose() {
+    this.toggleFromElement.forEach(
+      element => element.removeEventListener('click', this.openHandler)
+    );
+    this.toggleToElement.forEach(
+      element => element.removeEventListener('click', this.openHandler)
+    );
+  }
+
+  private bindOpenEvent(): void {
+    this.toggleFromElement.forEach(
+      element => element.addEventListener('click', this.openHandler.bind(this))
+    );
+
+    this.toggleToElement.forEach(
+      element => element.addEventListener('click', this.openHandler.bind(this))
+    );
+  }
+
+  private openHandler() {
+    this.open();
   }
 
   private getRangeForSelectedDatesAndNewDate(newDate: string): { firstDate: string, lastDate: string } {
     let firstDate = this.selectedDateFrom();
     let lastDate = this.selectedDateTo();
-
     let mFirstDate = moment(firstDate, 'DD.MM.YYYY');
     let mLastDate = moment(lastDate, 'DD.MM.YYYY');
     let mNewDate = moment(newDate, 'DD.MM.YYYY');
@@ -162,7 +210,6 @@ export class DatePickerComponent {
         if (mNewDate > mFirstDate) {
           lastDate = newDate;
         } else {
-          lastDate = firstDate;
           firstDate = newDate;
         }
       } else {
@@ -179,10 +226,11 @@ export class DatePickerComponent {
   submit() {
     this.dateFrom(this.selectedDateFrom());
     this.dateTo(this.selectedDateTo());
-    alert('submit');
+    this.close();
   }
 
   close() {
+    this.isOpen(false);
     if (this.onClose) {
       this.onClose();
     }
@@ -199,35 +247,7 @@ export class DatePickerComponent {
         return;
       }
 
-      let dates: { firstDate: string, lastDate: string } = this.getRangeForSelectedDatesAndNewDate(day.fullDate);
-      let mFirstDate = moment(dates.firstDate, 'DD.MM.YYYY');
-      let mLasttDate = moment(dates.lastDate, 'DD.MM.YYYY');
-
-      this.monthsView.collection.forEach(
-        (month: MonthView) => {
-          month.collection.forEach(
-            (dayView: DayView) => {
-              let mFullDate = moment(dayView.fullDate, 'DD.MM.YYYY');
-
-              if (
-                (dates.firstDate && mFullDate.format('DD.MM.YYYY') == mFirstDate.format('DD.MM.YYYY')) ||
-                (dates.lastDate && mFullDate.format('DD.MM.YYYY') == mLasttDate.format('DD.MM.YYYY'))
-              ) {
-                dayView.selected(true);
-              } else {
-                dayView.selected(false);
-              }
-
-              if (dates.firstDate && dates.lastDate && mFullDate > mFirstDate && mFullDate < mLasttDate) {
-                dayView.inRange(true);
-              } else {
-                dayView.inRange(false);
-              }
-            }
-          )
-        }
-      )
-
+      let dates: { firstDate: string, lastDate: string } = this.refreshSelectedDays(day);
       this.selectedDateFrom(dates.firstDate);
       this.selectedDateTo(dates.lastDate);
 
@@ -235,17 +255,108 @@ export class DatePickerComponent {
     };
   }
 
+  private refreshSelectedDays(day: DayView): { firstDate: string, lastDate: string } {
+    let dates: { firstDate: string, lastDate: string } = this.getRangeForSelectedDatesAndNewDate(day.fullDate);
+    let mFirstDate = moment(dates.firstDate, 'DD.MM.YYYY');
+    let mLasttDate = moment(dates.lastDate, 'DD.MM.YYYY');
+
+    this.monthsView.collection.forEach(
+      (month: MonthView) => {
+        month.collection.forEach(
+          (dayView: DayView) => {
+            let mFullDate = moment(dayView.fullDate, 'DD.MM.YYYY');
+
+            if (
+              (dates.firstDate && mFullDate.format('DD.MM.YYYY') == mFirstDate.format('DD.MM.YYYY')) ||
+              (dates.lastDate && mFullDate.format('DD.MM.YYYY') == mLasttDate.format('DD.MM.YYYY'))
+            ) {
+              dayView.selected(true);
+            } else {
+              dayView.selected(false);
+            }
+
+            if ((dates.firstDate && mFullDate > mFirstDate) && ((dates.lastDate &&  mFullDate < mLasttDate) || !dates.lastDate)) {
+              dayView.inRange(true);
+            } else {
+              console.log(dates.lastDate);
+              dayView.inRange(false);
+            }
+          }
+        )
+      }
+    );
+
+    return dates;
+  }
+
   private setMonths(): void {
-    const firstMonth = moment();
-    let newMonth = createMonth(Number(firstMonth.format('D')), Number(firstMonth.format('MM')), Number(firstMonth.format('YYYY')));
+    const month = moment();
 
-
-    this.monthsView.collection.push(newMonth);
     for (let i = 0; i < 11; i++) {
-      let month = firstMonth.add(1, 'M');
       let newMonth = createMonth(Number(month.format('D')), Number(month.format('MM')), Number(month.format('YYYY')));
       this.monthsView.collection.push(newMonth);
+      month.add(1, 'M');
     }
+  }
+
+  private initSelectedDays() {
+    let dayViewFrom: DayView = null;
+    let dayViewTo: DayView = null;
+    let dates = { firstDate: null, lastDate: null };
+
+    dayViewFrom = this.getDayView(this.dateFrom());
+    dayViewTo = this.getDayView(this.dateTo());
+
+    if (dayViewFrom && dayViewTo) {
+      dates = this.refreshSelectedDays(dayViewFrom);
+      this.selectedDateFrom(dates.firstDate);
+      this.selectedDateTo(dates.lastDate);
+      dates = this.refreshSelectedDays(dayViewTo);
+      this.selectedDateFrom(dates.firstDate);
+      this.selectedDateTo(dates.lastDate);
+    } else if (dayViewFrom) {
+      dates = this.refreshSelectedDays(dayViewFrom);
+      this.selectedDateFrom(dates.firstDate);
+      this.selectedDateTo(null);
+    } else {
+      this.selectedDateFrom(null);
+      this.selectedDateTo(null);
+    }
+  }
+
+  private showSelectedMonth() {
+    if (this.selectedDateFrom()) {
+      const el = this.componentInfo.element.querySelector('.ft-dpday--selected');
+      const months = this.componentInfo.element.querySelector('months-component');
+      if (el) {
+        months.scroll(0, el.offsetTop - 170);
+      }
+    }
+  }
+  private getDayView(date: string): DayView {
+    let result: DayView = null;
+
+    if (!date) {
+      return null;
+    }
+
+    for (let i = 0; i < this.monthsView.collection.length; i++) {
+      if (result) {
+        break;
+      }
+      let month = this.monthsView.collection[i];
+
+      for (let j = 0; j < month.collection.length; j++) {
+        let dayView: DayView = month.collection[j];
+
+        if (date === dayView.fullDate) {
+          result = dayView;
+          break;
+        }
+      }
+    }
+
+    return result;
   }
 
   public static register(): void {
@@ -345,6 +456,7 @@ class DayCmp {
 
 const datePickerComponentConfig: KnockoutComponentTypes.ComponentConfig = {
   template: `
+  <div class='ft-dp' data-bind="css: { 'ft-dp--open': isOpen() }">
   <header>
   <input type='hidden' data-bind="value: selectedDateFrom">
   <input type='hidden' data-bind="value: selectedDateTo">
@@ -365,8 +477,11 @@ const datePickerComponentConfig: KnockoutComponentTypes.ComponentConfig = {
   <footer class='ft-dp__footer'>
   <button data-bind="click: submit" class='ft-btn-primary'>Wybierz</button>
   </footer>
+  </div>
   `,
-  viewModel: (params: DatePickerParameters) => new DatePickerComponent(params)
+  viewModel: { 
+    createViewModel: (params: DatePickerParameters, componentInfo: KnockoutComponentTypes.ComponentInfo) => new DatePickerComponent(params, componentInfo)
+  }
 };
 
 const monthsComponentConfig: KnockoutComponentTypes.ComponentConfig = {
@@ -386,7 +501,7 @@ const monthComponentConfig: KnockoutComponentTypes.ComponentConfig = {
 };
 
 const DayComponentConfig: KnockoutComponentTypes.ComponentConfig = {
-  template: `<div data-bind="css: { 'green': dayView.selected(),  'light-blue': dayView.inRange() }, click: selectDay"><!-- ko text: dayView.dayOfMonth --><!-- /ko --></div>`,
+  template: `<div data-bind="css: { 'ft-dpday--selected': dayView.selected(),  'light-blue': dayView.inRange(), 'disabled': dayView.disabled }, click: selectDay"><!-- ko text: dayView.dayOfMonth --><!-- /ko --></div>`,
   viewModel: (params: DayParameters) => new DayCmp(params)
 };
 

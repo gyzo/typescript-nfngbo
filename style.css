@@ -2,13 +2,7 @@ body  {
   font-family: "Open Sans",sans-serif;
 }
 datepicker-component {
-  height: 100%;
-  overflow-y: auto;
-  position: fixed;
-  top: 0;
-  left:0;
-  max-width: 1225px;
-  font-size: 14px;
+  display: block;
 }
 header {
   position: fixed;
@@ -16,6 +10,7 @@ header {
   width: 100%;
   max-width: 1225px;
   height: 158px;
+  z-index: 1;
   background-color: #004165;
 }
 
@@ -28,12 +23,15 @@ header {
   max-width: 1225px;
   background-color: white;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 months-component {
   display: block;
   padding-top: 158px;
   padding-bottom: 88px;
+  overflow: auto;
+  height: 100%;
 }
 month-component {
   display: block;
@@ -48,7 +46,6 @@ day-component {
   display: block;
   margin: 2px 0;
   color: #777;
-  
 }
 
 day-component > div {
@@ -59,8 +56,10 @@ day-component > div {
   cursor: pointer;
 }
 
-
-.green {
+.disabled {
+  opacity: 0.4;
+}
+.ft-dpday--selected {
   background-color: #5ac4f2;
   color: white;
 }
@@ -70,6 +69,23 @@ day-component > div {
 svg {
   height: 18px;
 }
+.ft-dp {
+  transition: left 1s;
+  display: none;
+  overflow: hidden;
+  position: fixed;
+  height: 100%;
+  top: 0;
+  left:100%;
+  max-width: 1225px;
+  font-size: 14px;
+}
+
+.ft-dp--open {
+  display: block;
+  left: 0;
+}
+
 .ft-dp__day {
   width: calc(100%/7);
   float: left;
@@ -164,6 +180,8 @@ text-transform: capitalize;
 }
 .ft-dp__dates-icon {
   fill: white;
+  width: 36px;
+  text-align: center;
 }
 
 .ft-btn-primary {

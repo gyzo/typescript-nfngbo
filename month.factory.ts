@@ -210,6 +210,7 @@ export class DatePickerComponent {
         if (mNewDate > mFirstDate) {
           lastDate = newDate;
         } else {
+          lastDate = firstDate;
           firstDate = newDate;
         }
       } else {
@@ -275,10 +276,9 @@ export class DatePickerComponent {
               dayView.selected(false);
             }
 
-            if ((dates.firstDate && mFullDate > mFirstDate) && ((dates.lastDate &&  mFullDate < mLasttDate) || !dates.lastDate)) {
+            if (dates.firstDate && dates.lastDate && mFullDate > mFirstDate && mFullDate < mLasttDate) {
               dayView.inRange(true);
             } else {
-              console.log(dates.lastDate);
               dayView.inRange(false);
             }
           }
@@ -329,7 +329,7 @@ export class DatePickerComponent {
       const el = this.componentInfo.element.querySelector('.ft-dpday--selected');
       const months = this.componentInfo.element.querySelector('months-component');
       if (el) {
-        months.scroll(0, el.offsetTop - 170);
+        months.scroll(0, el.offsetTop - 160);
       }
     }
   }

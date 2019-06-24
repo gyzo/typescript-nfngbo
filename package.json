@@ -1,0 +1,10 @@
+{
+  "name": "typescript",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@types/knockout": "^3.4.66",
+    "knockout": "3.4.2",
+    "moment": "^2.24.0"
+  }
+}

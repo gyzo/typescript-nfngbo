@@ -329,7 +329,7 @@ export class DatePickerComponent {
       const el = this.componentInfo.element.querySelector('.ft-dpday--selected');
       const months = this.componentInfo.element.querySelector('months-component');
       if (el) {
-        months.scroll(0, el.offsetTop - 160);
+        months.scroll(0, el.offsetTop - 60);
       }
     }
   }

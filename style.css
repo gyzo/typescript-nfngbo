@@ -27,11 +27,11 @@ header {
 }
 
 months-component {
-  display: block;
-  padding-top: 158px;
-  padding-bottom: 88px;
-  overflow: auto;
-  height: 100%;
+      display: block;
+    top: 158px;
+    bottom: 78px;
+    overflow: auto;
+    position: fixed;
 }
 month-component {
   display: block;
@@ -47,6 +47,7 @@ day-component {
   display: block;
   margin: 2px 0;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
   color: #777;
 }
 
@@ -55,6 +56,7 @@ day-component > div {
   border-radius: 50%;
   width: 35px;
   margin: 0 auto;
+    -webkit-tap-highlight-color: transparent;
   cursor: pointer;
   user-select: none;
 }
@@ -102,7 +104,7 @@ svg {
   position: fixed;
   left: 0;
   max-width: 1225px;
-  padding: 15px;
+  padding: 17px;
   fill: white;
   cursor: pointer;
 }

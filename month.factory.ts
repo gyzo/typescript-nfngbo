@@ -456,6 +456,7 @@ class DayCmp {
 
 const datePickerComponentConfig: KnockoutComponentTypes.ComponentConfig = {
   template: `
+  
   <div class='ft-dp' data-bind="css: { 'ft-dp--open': isOpen() }">
   <header>
   <input type='hidden' data-bind="value: selectedDateFrom">

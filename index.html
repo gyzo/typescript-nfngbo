@@ -8,8 +8,8 @@
   </div>
   _____________________
   <br>
-  <input data-bind='value: from' class='ftjs-dp-referer-from'>
-  <input data-bind='value: to' class='ftjs-dp-referer-to' placeholder="bez terminu">
+  <input readonly data-bind='value: from' class='ftjs-dp-referer-from'>
+  <input readonly data-bind='value: to' class='ftjs-dp-referer-to' placeholder="bez terminu">
   <br>
   <datepicker-component params="input: { currentDate: 'c', dateFrom: from, dateTo: to, toggleFrom: '.ftjs-dp-referer-from' , toggleTo: '.ftjs-dp-referer-to'  }, output: { onSelectDay: selectDay }">test</datepicker-component>
 </div>

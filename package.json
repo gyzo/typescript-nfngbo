@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@types/knockout": "^3.4.66",
-    "knockout": "3.4.2",
+    "knockout": "3.5.0",
     "moment": "^2.24.0"
   }
 }
